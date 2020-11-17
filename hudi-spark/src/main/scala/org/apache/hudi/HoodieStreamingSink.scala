@@ -26,6 +26,7 @@ import org.apache.hudi.common.model.HoodieRecordPayload
 import org.apache.hudi.common.table.{HoodieTableConfig, HoodieTableMetaClient}
 import org.apache.hudi.common.table.timeline.HoodieInstant.State
 import org.apache.hudi.common.table.timeline.{HoodieInstant, HoodieTimeline}
+import org.apache.hudi.common.util
 import org.apache.hudi.common.util.CompactionUtils
 import org.apache.hudi.exception.HoodieCorruptedDataException
 import org.apache.log4j.LogManager
@@ -85,6 +86,7 @@ class HoodieStreamingSink(sqlContext: SQLContext,
           if (compactionInstantOps.isPresent) {
             asyncCompactorService.enqueuePendingCompaction(
               new HoodieInstant(State.REQUESTED, HoodieTimeline.COMPACTION_ACTION, compactionInstantOps.get()))
+            writeClient.get.resetElapsedTime(commitOps.get())
           }
           Success((true, commitOps, compactionInstantOps))
         case Failure(e) =>

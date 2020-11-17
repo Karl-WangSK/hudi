@@ -93,6 +93,7 @@ public abstract class AbstractHoodieWriteClient<T extends HoodieRecordPayload, I
   private transient HoodieWriteCommitCallback commitCallback;
   protected final boolean rollbackPending;
   protected transient AsyncCleanerService asyncCleanerService;
+  protected String elapsedTime;
 
   /**
    * Create a write client, without cleaning up failed/inflight commits.
@@ -129,6 +130,7 @@ public abstract class AbstractHoodieWriteClient<T extends HoodieRecordPayload, I
     this.metrics = new HoodieMetrics(config, config.getTableName());
     this.rollbackPending = rollbackPending;
     this.index = createIndex(writeConfig);
+    this.elapsedTime = HoodieActiveTimeline.createNewInstantTime();
   }
 
   protected abstract HoodieIndex<T, I, K, O> createIndex(HoodieWriteConfig writeConfig);
@@ -789,6 +791,10 @@ public abstract class AbstractHoodieWriteClient<T extends HoodieRecordPayload, I
     } catch (IOException e) {
       throw new HoodieIOException("IOException thrown while reading last commit metadata", e);
     }
+  }
+
+  public void resetElapsedTime(String instantTime) {
+    this.elapsedTime = instantTime;
   }
 
   @Override
