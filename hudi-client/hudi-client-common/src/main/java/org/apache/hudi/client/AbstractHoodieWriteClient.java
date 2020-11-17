@@ -647,7 +647,7 @@ public abstract class AbstractHoodieWriteClient<T extends HoodieRecordPayload, I
   public boolean scheduleCompactionAtInstant(String instantTime, Option<Map<String, String>> extraMetadata) throws HoodieIOException {
     LOG.info("Scheduling compaction at instant time :" + instantTime);
     Option<HoodieCompactionPlan> plan = createTable(config, hadoopConf)
-        .scheduleCompaction(context, instantTime, extraMetadata);
+        .scheduleCompaction(context, instantTime, extraMetadata, elapsedTime);
     return plan.isPresent();
   }
 

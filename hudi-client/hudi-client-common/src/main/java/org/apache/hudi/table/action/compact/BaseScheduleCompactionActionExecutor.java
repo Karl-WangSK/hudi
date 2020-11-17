@@ -39,14 +39,17 @@ import java.util.stream.Collectors;
 public abstract class BaseScheduleCompactionActionExecutor<T extends HoodieRecordPayload, I, K, O> extends BaseActionExecutor<T, I, K, O, Option<HoodieCompactionPlan>> {
 
   private final Option<Map<String, String>> extraMetadata;
+  protected final String elapsedTime;
 
   public BaseScheduleCompactionActionExecutor(HoodieEngineContext context,
                                               HoodieWriteConfig config,
                                               HoodieTable<T, I, K, O> table,
                                               String instantTime,
-                                              Option<Map<String, String>> extraMetadata) {
+                                              Option<Map<String, String>> extraMetadata,
+                                              String elapsedTime) {
     super(context, config, table, instantTime);
     this.extraMetadata = extraMetadata;
+    this.elapsedTime = elapsedTime;
   }
 
   protected abstract HoodieCompactionPlan scheduleCompaction();
