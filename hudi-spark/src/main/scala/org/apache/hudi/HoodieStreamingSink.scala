@@ -86,7 +86,7 @@ class HoodieStreamingSink(sqlContext: SQLContext,
           if (compactionInstantOps.isPresent) {
             asyncCompactorService.enqueuePendingCompaction(
               new HoodieInstant(State.REQUESTED, HoodieTimeline.COMPACTION_ACTION, compactionInstantOps.get()))
-            writeClient.get.resetElapsedTime(commitOps.get())
+            writeClient.get.resetInitialTime(commitOps.get())
           }
           Success((true, commitOps, compactionInstantOps))
         case Failure(e) =>

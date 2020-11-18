@@ -793,7 +793,7 @@ public abstract class AbstractHoodieWriteClient<T extends HoodieRecordPayload, I
     }
   }
 
-  public void resetElapsedTime(String instantTime) {
+  public void resetInitialTime(String instantTime) {
     this.initialTime = instantTime;
   }
 
