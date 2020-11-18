@@ -316,7 +316,7 @@ public abstract class HoodieTable<T extends HoodieRecordPayload, I, K, O> implem
   public abstract Option<HoodieCompactionPlan> scheduleCompaction(HoodieEngineContext context,
                                                                   String instantTime,
                                                                   Option<Map<String, String>> extraMetadata,
-                                                                  String elapsedTime);
+                                                                  String initialTime);
 
   /**
    * Run Compaction on the table. Compaction arranges the data so that it is optimized for data access.

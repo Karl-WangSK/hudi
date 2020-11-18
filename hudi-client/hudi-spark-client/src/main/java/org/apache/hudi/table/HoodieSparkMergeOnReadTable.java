@@ -120,9 +120,9 @@ public class HoodieSparkMergeOnReadTable<T extends HoodieRecordPayload> extends 
 
   @Override
   public Option<HoodieCompactionPlan> scheduleCompaction(HoodieEngineContext context, String instantTime, Option<Map<String, String>> extraMetadata,
-                                                         String elapsedTime) {
+                                                         String initialTime) {
     BaseScheduleCompactionActionExecutor scheduleCompactionExecutor = new SparkScheduleCompactionActionExecutor(
-        context, config, this, instantTime, extraMetadata, elapsedTime);
+        context, config, this, instantTime, extraMetadata, initialTime);
     return scheduleCompactionExecutor.execute();
   }
 

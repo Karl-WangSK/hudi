@@ -109,7 +109,7 @@ public class TestHoodieCompactor extends HoodieClientTestHarness {
     HoodieTable table = HoodieSparkTable.create(getConfig(), context, metaClient);
     String compactionInstantTime = HoodieActiveTimeline.createNewInstantTime();
     assertThrows(HoodieNotSupportedException.class, () -> {
-      table.scheduleCompaction(context, compactionInstantTime, Option.empty());
+      table.scheduleCompaction(context, compactionInstantTime, Option.empty(), HoodieActiveTimeline.createNewInstantTime());
       table.compact(context, compactionInstantTime);
     });
   }
@@ -127,7 +127,7 @@ public class TestHoodieCompactor extends HoodieClientTestHarness {
       writeClient.insert(recordsRDD, newCommitTime).collect();
 
       String compactionInstantTime = HoodieActiveTimeline.createNewInstantTime();
-      Option<HoodieCompactionPlan> plan = table.scheduleCompaction(context, compactionInstantTime, Option.empty());
+      Option<HoodieCompactionPlan> plan = table.scheduleCompaction(context, compactionInstantTime, Option.empty(), HoodieActiveTimeline.createNewInstantTime());
       assertFalse(plan.isPresent(), "If there is nothing to compact, result will be empty");
     }
   }
@@ -178,7 +178,7 @@ public class TestHoodieCompactor extends HoodieClientTestHarness {
       // Do a compaction
       table = HoodieSparkTable.create(config, context);
       String compactionInstantTime = "102";
-      table.scheduleCompaction(context, compactionInstantTime, Option.empty());
+      table.scheduleCompaction(context, compactionInstantTime, Option.empty(), HoodieActiveTimeline.createNewInstantTime());
       table.getMetaClient().reloadActiveTimeline();
       JavaRDD<WriteStatus> result = (JavaRDD<WriteStatus>) table.compact(context, compactionInstantTime).getWriteStatuses();
 

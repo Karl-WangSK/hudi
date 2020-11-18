@@ -110,7 +110,7 @@ public class HoodieCompactionConfig extends DefaultHoodieConfig {
   private static final String DEFAULT_INLINE_COMPACT = "false";
   private static final String DEFAULT_INCREMENTAL_CLEANER = "true";
   private static final String DEFAULT_INLINE_COMPACT_NUM_DELTA_COMMITS = "5";
-  private static final String DEFAULT_INLINE_COMPACT_ELAPSED_TIME = String.valueOf(1000 * 60 * 60 * 24);
+  private static final String DEFAULT_INLINE_COMPACT_ELAPSED_TIME = String.valueOf(60 * 60 * 24);
   private static final String DEFAULT_CLEANER_FILE_VERSIONS_RETAINED = "3";
   private static final String DEFAULT_CLEANER_COMMITS_RETAINED = "10";
   private static final String DEFAULT_MAX_COMMITS_TO_KEEP = "30";
@@ -237,8 +237,8 @@ public class HoodieCompactionConfig extends DefaultHoodieConfig {
       return this;
     }
 
-    public Builder withMaxDeltaTimeBeforeCompaction(int MaxDeltaTimeBeforeCompaction) {
-      props.setProperty(INLINE_COMPACT_ELAPSED_TIME_PROP, String.valueOf(MaxDeltaTimeBeforeCompaction));
+    public Builder withMaxDeltaTimeBeforeCompaction(int maxDeltaTimeBeforeCompaction) {
+      props.setProperty(INLINE_COMPACT_ELAPSED_TIME_PROP, String.valueOf(maxDeltaTimeBeforeCompaction));
       return this;
     }
 

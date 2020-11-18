@@ -50,8 +50,8 @@ public class SparkScheduleCompactionActionExecutor<T extends HoodieRecordPayload
                                                HoodieTable<T, JavaRDD<HoodieRecord<T>>, JavaRDD<HoodieKey>, JavaRDD<WriteStatus>> table,
                                                String instantTime,
                                                Option<Map<String, String>> extraMetadata,
-                                               String elapsedTime) {
-    super(context, config, table, instantTime, extraMetadata, elapsedTime);
+                                               String initialTime) {
+    super(context, config, table, instantTime, extraMetadata, initialTime);
   }
 
   @Override
@@ -66,12 +66,12 @@ public class SparkScheduleCompactionActionExecutor<T extends HoodieRecordPayload
 
     int deltaCommitsSinceLastCompaction = table.getActiveTimeline().getDeltaCommitTimeline()
         .findInstantsAfter(lastCompactionTs, Integer.MAX_VALUE).countInstants();
-    if (config.getInlineCompactDeltaCommitMax() > deltaCommitsSinceLastCompaction &&
-            timeCompaction(instantTime, elapsedTime, deltaCommitsSinceLastCompaction)) {
+    if (config.getInlineCompactDeltaCommitMax() > deltaCommitsSinceLastCompaction
+                    && timeCompaction(instantTime, initialTime, deltaCommitsSinceLastCompaction)) {
       LOG.info("Not scheduling compaction as only " + deltaCommitsSinceLastCompaction
           + " delta commits was found since last compaction " + lastCompactionTs + ". Waiting for "
           + config.getInlineCompactDeltaCommitMax() + ". Or " + config.getInlineCompactDeltaElapsedTimeMax()
-              + "ms elapsed time need since last compaction "+ elapsedTime);
+              + "ms elapsed time need since last compaction " + initialTime);
       return new HoodieCompactionPlan();
     }
 
@@ -88,11 +88,11 @@ public class SparkScheduleCompactionActionExecutor<T extends HoodieRecordPayload
     }
   }
 
-  protected boolean timeCompaction(String instantTime, String elapsedTime, int deltaCommitsSinceLastCompaction) {
-    if(Integer.parseInt(elapsedTime) + config.getInlineCompactDeltaElapsedTimeMax() >= Integer.parseInt(instantTime)){
+  protected boolean timeCompaction(String instantTime, String initialTime, int deltaCommitsSinceLastCompaction) {
+    if (Long.parseLong(initialTime) + config.getInlineCompactDeltaElapsedTimeMax() > Long.parseLong(instantTime)) {
       return true;
-    } else if((Integer.parseInt(elapsedTime) + config.getInlineCompactDeltaElapsedTimeMax() < Integer.parseInt(instantTime)
-            && deltaCommitsSinceLastCompaction == 0)){
+    } else if ((Long.parseLong(initialTime) + config.getInlineCompactDeltaElapsedTimeMax() <= Long.parseLong(instantTime)
+            && deltaCommitsSinceLastCompaction <= 0)) {
       return true;
     } else {
       return false;
