@@ -221,8 +221,13 @@ public class HoodieMergeHandle<T extends HoodieRecordPayload, I, K, O> extends H
       // writing the first record. So make a copy of the record to be merged
       HoodieRecord<T> hoodieRecord = new HoodieRecord<>(keyToNewRecords.get(key));
       try {
-        Option<IndexedRecord> combinedAvroRecord =
-            hoodieRecord.getData().combineAndGetUpdateValue(oldRecord, useWriterSchema ? writerSchemaWithMetafields : writerSchema);
+        Option<IndexedRecord> combinedAvroRecord;
+        if (config.getPartialUpdate()){
+          combinedAvroRecord = hoodieRecord.getData().combineAndGetPartialUpdateValue(oldRecord, useWriterSchema ? writerSchemaWithMetafields : writerSchema);
+        } else {
+          combinedAvroRecord = hoodieRecord.getData().combineAndGetUpdateValue(oldRecord, useWriterSchema ? writerSchemaWithMetafields : writerSchema);
+        }
+
         if (writeUpdateRecord(hoodieRecord, combinedAvroRecord)) {
           /*
            * ONLY WHEN 1) we have an update for this key AND 2) We are able to successfully write the the combined new

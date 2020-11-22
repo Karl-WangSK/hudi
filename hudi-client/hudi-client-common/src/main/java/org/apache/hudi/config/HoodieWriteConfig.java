@@ -63,8 +63,11 @@ public class HoodieWriteConfig extends DefaultHoodieConfig {
   public static final String TIMELINE_LAYOUT_VERSION = "hoodie.timeline.layout.version";
   public static final String BASE_PATH_PROP = "hoodie.base.path";
   public static final String AVRO_SCHEMA = "hoodie.avro.schema";
+  public static final String PARTIAL_AVRO_SCHEMA = "hoodie.avro.partial.schema";
   public static final String AVRO_SCHEMA_VALIDATE = "hoodie.avro.schema.validate";
   public static final String DEFAULT_AVRO_SCHEMA_VALIDATE = "false";
+  public static final String PARTIAL_UPDATE = "hoodie.upsert.partial";
+  public static final String DEFAULT_PARTIAL_UPDATE = "false";
   public static final String DEFAULT_PARALLELISM = "1500";
   public static final String INSERT_PARALLELISM = "hoodie.insert.shuffle.parallelism";
   public static final String BULKINSERT_PARALLELISM = "hoodie.bulkinsert.shuffle.parallelism";
@@ -165,12 +168,24 @@ public class HoodieWriteConfig extends DefaultHoodieConfig {
     return props.getProperty(AVRO_SCHEMA);
   }
 
+  public String getPartialSchema() {
+    return props.getProperty(PARTIAL_AVRO_SCHEMA);
+  }
+
   public void setSchema(String schemaStr) {
     props.setProperty(AVRO_SCHEMA, schemaStr);
   }
 
+  public void setPartialSchema(String schemaStr) {
+    props.setProperty(PARTIAL_AVRO_SCHEMA, schemaStr);
+  }
+
   public boolean getAvroSchemaValidate() {
     return Boolean.parseBoolean(props.getProperty(AVRO_SCHEMA_VALIDATE));
+  }
+
+  public boolean getPartialUpdate() {
+    return Boolean.parseBoolean(props.getProperty(PARTIAL_UPDATE));
   }
 
   public String getTableName() {
@@ -816,8 +831,18 @@ public class HoodieWriteConfig extends DefaultHoodieConfig {
       return this;
     }
 
+    public Builder withPartialSchema(String schemaStr) {
+      props.setProperty(PARTIAL_AVRO_SCHEMA, schemaStr);
+      return this;
+    }
+
     public Builder withAvroSchemaValidate(boolean enable) {
       props.setProperty(AVRO_SCHEMA_VALIDATE, String.valueOf(enable));
+      return this;
+    }
+
+    public Builder withPartialUpdate(boolean enable) {
+      props.setProperty(PARTIAL_UPDATE, String.valueOf(enable));
       return this;
     }
 
@@ -1034,6 +1059,7 @@ public class HoodieWriteConfig extends DefaultHoodieConfig {
       setDefaultOnCondition(props, !props.containsKey(FAIL_ON_TIMELINE_ARCHIVING_ENABLED_PROP),
           FAIL_ON_TIMELINE_ARCHIVING_ENABLED_PROP, DEFAULT_FAIL_ON_TIMELINE_ARCHIVING_ENABLED);
       setDefaultOnCondition(props, !props.containsKey(AVRO_SCHEMA_VALIDATE), AVRO_SCHEMA_VALIDATE, DEFAULT_AVRO_SCHEMA_VALIDATE);
+      setDefaultOnCondition(props, !props.containsKey(PARTIAL_UPDATE), PARTIAL_UPDATE, DEFAULT_PARTIAL_UPDATE);
       setDefaultOnCondition(props, !props.containsKey(BULKINSERT_SORT_MODE),
           BULKINSERT_SORT_MODE, DEFAULT_BULKINSERT_SORT_MODE);
 

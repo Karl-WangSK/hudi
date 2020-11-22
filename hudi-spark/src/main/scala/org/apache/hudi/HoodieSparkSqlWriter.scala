@@ -98,7 +98,7 @@ private[hudi] object HoodieSparkSqlWriter {
     val instantTime = HoodieActiveTimeline.createNewInstantTime()
     val fs = basePath.getFileSystem(sparkContext.hadoopConfiguration)
     tableExists = fs.exists(new Path(basePath, HoodieTableMetaClient.METAFOLDER_NAME))
-    var tableConfig = getHoodieTableConfig(sparkContext, path.get, hoodieTableConfigOpt)
+    var (metaClient, tableConfig) = getHoodieTableConfig(sparkContext, path.get, hoodieTableConfigOpt)
 
     if (mode == SaveMode.Ignore && tableExists) {
       log.warn(s"hoodie table at $basePath already exists. Ignoring & not performing actual writes.")
@@ -157,7 +157,7 @@ private[hudi] object HoodieSparkSqlWriter {
 
           // Create a HoodieWriteClient & issue the write.
           val client = hoodieWriteClient.getOrElse(DataSourceUtils.createHoodieClient(jsc, schema.toString, path.get,
-            tblName, mapAsJavaMap(parameters)
+            tblName, mapAsJavaMap(parameters), metaClient, tableExists
           )).asInstanceOf[SparkRDDWriteClient[HoodieRecordPayload[Nothing]]]
 
           if (isAsyncCompactionEnabled(client, tableConfig, parameters, jsc.hadoopConfiguration())) {
@@ -197,7 +197,7 @@ private[hudi] object HoodieSparkSqlWriter {
           // Create a HoodieWriteClient & issue the delete.
           val client = hoodieWriteClient.getOrElse(DataSourceUtils.createHoodieClient(jsc,
             Schema.create(Schema.Type.NULL).toString, path.get, tblName,
-            mapAsJavaMap(parameters))).asInstanceOf[SparkRDDWriteClient[HoodieRecordPayload[Nothing]]]
+            mapAsJavaMap(parameters), metaClient, tableExists)).asInstanceOf[SparkRDDWriteClient[HoodieRecordPayload[Nothing]]]
 
           if (isAsyncCompactionEnabled(client, tableConfig, parameters, jsc.hadoopConfiguration())) {
             asyncCompactionTriggerFn.get.apply(client)
@@ -244,7 +244,7 @@ private[hudi] object HoodieSparkSqlWriter {
     val basePath = new Path(path)
     val fs = basePath.getFileSystem(sparkContext.hadoopConfiguration)
     tableExists = fs.exists(new Path(basePath, HoodieTableMetaClient.METAFOLDER_NAME))
-    val tableConfig = getHoodieTableConfig(sparkContext, path, hoodieTableConfigOpt)
+    var (metaClient, tableConfig) = getHoodieTableConfig(sparkContext, path, hoodieTableConfigOpt)
 
     // Handle various save modes
     if (mode == SaveMode.Ignore && tableExists) {
@@ -263,7 +263,8 @@ private[hudi] object HoodieSparkSqlWriter {
     }
 
     val jsc = new JavaSparkContext(sqlContext.sparkContext)
-    val writeClient = DataSourceUtils.createHoodieClient(jsc, schema, path, tableName, mapAsJavaMap(parameters))
+    val writeClient = DataSourceUtils.createHoodieClient(jsc, schema, path, tableName, mapAsJavaMap(parameters)
+      , metaClient, tableExists)
     writeClient.bootstrap(org.apache.hudi.common.util.Option.empty())
     val metaSyncSuccess = metaSync(parameters, basePath, jsc.hadoopConfiguration)
     metaSyncSuccess
@@ -278,7 +279,7 @@ private[hudi] object HoodieSparkSqlWriter {
                       instantTime: String): (Boolean, common.util.Option[String]) = {
     val structName = s"${tblName}_record"
     val nameSpace = s"hoodie.${tblName}"
-    val writeConfig = DataSourceUtils.createHoodieConfig(null, path.get, tblName, mapAsJavaMap(parameters))
+    val writeConfig = DataSourceUtils.createHoodieConfig(null, path.get, tblName, mapAsJavaMap(parameters), null, false)
     val hoodieDF = HoodieDatasetBulkInsertHelper.prepareHoodieDatasetForBulkInsert(sqlContext, writeConfig, df, structName, nameSpace)
     hoodieDF.write.format("org.apache.hudi.internal")
       .option(HoodieDataSourceInternalWriter.INSTANT_TIME_OPT_KEY, instantTime)
@@ -468,12 +469,12 @@ private[hudi] object HoodieSparkSqlWriter {
 
   private def getHoodieTableConfig(sparkContext: SparkContext,
                                    tablePath: String,
-                                   hoodieTableConfigOpt: Option[HoodieTableConfig]): HoodieTableConfig = {
+                                   hoodieTableConfigOpt: Option[HoodieTableConfig]): (HoodieTableMetaClient, HoodieTableConfig) = {
     if (tableExists) {
-      hoodieTableConfigOpt.getOrElse(
-        new HoodieTableMetaClient(sparkContext.hadoopConfiguration, tablePath).getTableConfig)
+      val metaClient: HoodieTableMetaClient = new HoodieTableMetaClient(sparkContext.hadoopConfiguration, tablePath)
+      (metaClient, hoodieTableConfigOpt.getOrElse(metaClient.getTableConfig))
     } else {
-      null
+      (null, null)
     }
   }
 }

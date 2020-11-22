@@ -18,6 +18,7 @@
 
 package org.apache.hudi;
 
+import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -31,6 +32,8 @@ import org.apache.hudi.common.model.HoodieRecord;
 import org.apache.hudi.common.model.HoodieRecordPayload;
 import org.apache.hudi.common.model.HoodieTableType;
 import org.apache.hudi.common.model.WriteOperationType;
+import org.apache.hudi.common.table.HoodieTableMetaClient;
+import org.apache.hudi.common.table.TableSchemaResolver;
 import org.apache.hudi.common.table.timeline.HoodieTimeline;
 import org.apache.hudi.common.util.CommitUtils;
 import org.apache.hudi.common.util.Option;
@@ -55,10 +58,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Utilities used throughout the data source.
@@ -164,7 +164,7 @@ public class DataSourceUtils {
   }
 
   public static HoodieWriteConfig createHoodieConfig(String schemaStr, String basePath,
-      String tblName, Map<String, String> parameters) {
+      String tblName, Map<String, String> parameters, HoodieTableMetaClient metaClient, Boolean tableExist) throws Exception {
     boolean asyncCompact = Boolean.parseBoolean(parameters.get(DataSourceWriteOptions.ASYNC_COMPACT_ENABLE_OPT_KEY()));
     boolean inlineCompact = !asyncCompact && parameters.get(DataSourceWriteOptions.TABLE_TYPE_OPT_KEY())
         .equals(DataSourceWriteOptions.MOR_TABLE_TYPE_OPT_VAL());
@@ -173,7 +173,20 @@ public class DataSourceUtils {
     HoodieWriteConfig.Builder builder = HoodieWriteConfig.newBuilder()
         .withPath(basePath).withAutoCommit(false).combineInput(combineInserts, true);
     if (schemaStr != null) {
-      builder = builder.withSchema(schemaStr);
+        if (tableExist){
+            TableSchemaResolver resolver = new TableSchemaResolver(metaClient);
+            Schema lastSchema = resolver.getTableAvroSchemaWithoutMetadataFields();
+            Schema currentSchema = new Schema.Parser().parse(schemaStr);
+            if(lastSchema.getFields().size() >= currentSchema.getFields().size()){
+              builder = builder.withSchema(lastSchema.toString());
+              builder = builder.withPartialSchema(schemaStr);
+              builder.withPartialUpdate(true);
+            }else {
+              builder = builder.withSchema(schemaStr);
+            }
+        } else {
+            builder = builder.withSchema(schemaStr);
+        }
     }
 
     return builder.forTable(tblName)
@@ -186,8 +199,9 @@ public class DataSourceUtils {
   }
 
   public static SparkRDDWriteClient createHoodieClient(JavaSparkContext jssc, String schemaStr, String basePath,
-                                                       String tblName, Map<String, String> parameters) {
-    return new SparkRDDWriteClient<>(new HoodieSparkEngineContext(jssc), createHoodieConfig(schemaStr, basePath, tblName, parameters), true);
+                                                       String tblName, Map<String, String> parameters, HoodieTableMetaClient metaClient,
+                                                       Boolean tableExist) throws Exception {
+    return new SparkRDDWriteClient<>(new HoodieSparkEngineContext(jssc), createHoodieConfig(schemaStr, basePath, tblName, parameters, metaClient, tableExist), true);
   }
 
   public static String getCommitActionType(WriteOperationType operation, HoodieTableType tableType) {

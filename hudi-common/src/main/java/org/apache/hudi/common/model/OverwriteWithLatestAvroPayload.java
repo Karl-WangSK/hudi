@@ -26,6 +26,7 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.generic.IndexedRecord;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Default payload used for delta streamer.
@@ -54,6 +55,21 @@ public class OverwriteWithLatestAvroPayload extends BaseAvroPayload
     } else {
       return this;
     }
+  }
+
+  public Option<IndexedRecord> combineAndGetPartialUpdateValue(IndexedRecord currentValue, Schema schema) throws IOException {
+    Option<IndexedRecord> recordOption = getInsertValue(schema);
+    if (recordOption.isPresent()) {
+      GenericRecord current = (GenericRecord) recordOption.get();
+      GenericRecord last = (GenericRecord) currentValue;
+
+      List<Schema.Field> fieldList = schema.getFields();
+      for (Schema.Field field : fieldList) {
+        last.put(field.name(), current.get(field.name()));
+      }
+      return Option.ofNullable(last);
+    }
+    return recordOption;
   }
 
   @Override

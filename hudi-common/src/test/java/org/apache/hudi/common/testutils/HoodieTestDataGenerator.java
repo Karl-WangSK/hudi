@@ -22,11 +22,7 @@ package org.apache.hudi.common.testutils;
 import org.apache.hudi.avro.HoodieAvroUtils;
 import org.apache.hudi.avro.model.HoodieCompactionPlan;
 import org.apache.hudi.common.fs.FSUtils;
-import org.apache.hudi.common.model.HoodieAvroPayload;
-import org.apache.hudi.common.model.HoodieCommitMetadata;
-import org.apache.hudi.common.model.HoodieKey;
-import org.apache.hudi.common.model.HoodiePartitionMetadata;
-import org.apache.hudi.common.model.HoodieRecord;
+import org.apache.hudi.common.model.*;
 import org.apache.hudi.common.table.HoodieTableMetaClient;
 import org.apache.hudi.common.table.timeline.HoodieInstant;
 import org.apache.hudi.common.table.timeline.HoodieTimeline;
@@ -122,6 +118,9 @@ public class HoodieTestDataGenerator {
       + "{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"_row_key\",\"type\":\"string\"},{\"name\":\"rider\",\"type\":\"string\"},"
       + "{\"name\":\"driver\",\"type\":\"string\"},{\"name\":\"fare\",\"type\":\"double\"},{\"name\": \"_hoodie_is_deleted\", \"type\": \"boolean\", \"default\": false}]}";
 
+  public static final String PARTIAL_TRIP_SCHEMA = "{\"type\":\"record\",\"name\":\"partialTripUberRec\",\"fields\":["
+          + "{\"name\":\"timestamp\",\"type\":\"double\"},{\"name\":\"_row_key\",\"type\":\"string\"}]}";
+
   public static final String NULL_SCHEMA = Schema.create(Schema.Type.NULL).toString();
   public static final String TRIP_HIVE_COLUMN_TYPES = "bigint,string,string,string,double,double,double,double,int,bigint,float,binary,int,bigint,decimal(10,6),"
       + "map<string,string>,struct<amount:double,currency:string>,array<struct<amount:double,currency:string>>,boolean";
@@ -132,6 +131,7 @@ public class HoodieTestDataGenerator {
       HoodieAvroUtils.addMetadataFields(AVRO_SCHEMA);
   public static final Schema AVRO_SHORT_TRIP_SCHEMA = new Schema.Parser().parse(SHORT_TRIP_SCHEMA);
   public static final Schema AVRO_TRIP_SCHEMA = new Schema.Parser().parse(TRIP_SCHEMA);
+  public static final Schema PARTIAL_AVRO_TRIP_SCHEMA = new Schema.Parser().parse(PARTIAL_TRIP_SCHEMA);
   public static final Schema FLATTENED_AVRO_SCHEMA = new Schema.Parser().parse(TRIP_FLATTENED_SCHEMA);
 
   private static final Random RAND = new Random(46474747);
@@ -206,7 +206,7 @@ public class HoodieTestDataGenerator {
    * @throws IOException
    */
   public static RawTripTestPayload generateRandomValue(
-      HoodieKey key, String instantTime, boolean isFlattened) throws IOException {
+          HoodieKey key, String instantTime, boolean isFlattened) throws IOException {
     GenericRecord rec = generateGenericRecord(
         key.getRecordKey(), "rider-" + instantTime, "driver-" + instantTime, 0,
         false, isFlattened);
@@ -224,6 +224,23 @@ public class HoodieTestDataGenerator {
   public RawTripTestPayload generatePayloadForShortTripSchema(HoodieKey key, String commitTime) throws IOException {
     GenericRecord rec = generateRecordForShortTripSchema(key.getRecordKey(), "rider-" + commitTime, "driver-" + commitTime, 0);
     return new RawTripTestPayload(rec.toString(), key.getRecordKey(), key.getPartitionPath(), SHORT_TRIP_SCHEMA);
+  }
+
+  public OverwriteWithLatestAvroPayload generatePartialUpdatePayloadForTripSchema(HoodieKey key, String commitTime) {
+    GenericRecord rec = generateRecordForTripSchema(key.getRecordKey(), "rider-" + commitTime, "driver-" + commitTime, 0);
+    return new OverwriteWithLatestAvroPayload(rec, 0);
+  }
+
+  public OverwriteWithLatestAvroPayload generatePartialUpdatePayloadForPartialTripSchema(HoodieKey key, String commitTime) {
+    GenericRecord rec = generateRecordForPartialTripSchema(key.getRecordKey(), 1.0);
+    return new OverwriteWithLatestAvroPayload(rec, 0);
+  }
+
+  public GenericRecord generateRecordForPartialTripSchema(String rowKey, double timestamp) {
+    GenericRecord rec = new GenericData.Record(PARTIAL_AVRO_TRIP_SCHEMA);
+    rec.put("_row_key", rowKey);
+    rec.put("timestamp", timestamp);
+    return rec;
   }
 
   /**

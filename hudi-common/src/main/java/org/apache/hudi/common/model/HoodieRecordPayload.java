@@ -58,6 +58,11 @@ public interface HoodieRecordPayload<T extends HoodieRecordPayload> extends Seri
   @PublicAPIMethod(maturity = ApiMaturityLevel.STABLE)
   Option<IndexedRecord> combineAndGetUpdateValue(IndexedRecord currentValue, Schema schema) throws IOException;
 
+  @PublicAPIMethod(maturity = ApiMaturityLevel.STABLE)
+  default Option<IndexedRecord> combineAndGetPartialUpdateValue(IndexedRecord currentValue, Schema schema) throws IOException {
+    return combineAndGetUpdateValue(currentValue, schema);
+  }
+
   /**
    * Generates an avro record out of the given HoodieRecordPayload, to be written out to storage. Called when writing a
    * new value for the given HoodieKey, wherein there is no existing record in storage to be combined against. (i.e

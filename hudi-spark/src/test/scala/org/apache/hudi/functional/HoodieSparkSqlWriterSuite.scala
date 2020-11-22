@@ -21,9 +21,12 @@ import java.util
 import java.util.{Date, UUID}
 
 import org.apache.commons.io.FileUtils
+import org.apache.hadoop.fs.Path
 import org.apache.hudi.DataSourceWriteOptions._
+import org.apache.hudi.HoodieSparkSqlWriter.tableExists
 import org.apache.hudi.client.SparkRDDWriteClient
 import org.apache.hudi.common.model.{HoodieRecord, HoodieRecordPayload}
+import org.apache.hudi.common.table.HoodieTableMetaClient
 import org.apache.hudi.common.testutils.HoodieTestDataGenerator
 import org.apache.hudi.config.HoodieWriteConfig
 import org.apache.hudi.exception.HoodieException
@@ -300,13 +303,19 @@ class HoodieSparkSqlWriterSuite extends FunSuite with Matchers {
           val records = DataSourceTestUtils.generateRandomRows(100)
           val recordsSeq = convertRowListToSeq(records)
           val df = spark.createDataFrame(sc.parallelize(recordsSeq), structType)
+          val basePath = new Path(path.toAbsolutePath.toString)
+          val fs = basePath.getFileSystem(sc.hadoopConfiguration)
+          val tableExists = fs.exists(new Path(basePath, HoodieTableMetaClient.METAFOLDER_NAME))
 
           val client = spy(DataSourceUtils.createHoodieClient(
             new JavaSparkContext(sc),
             schema.toString,
             path.toAbsolutePath.toString,
             hoodieFooTableName,
-            mapAsJavaMap(fooTableParams)).asInstanceOf[SparkRDDWriteClient[HoodieRecordPayload[Nothing]]])
+            mapAsJavaMap(fooTableParams),
+            new HoodieTableMetaClient(sc.hadoopConfiguration, path.toAbsolutePath.toString),
+            tableExists)
+            .asInstanceOf[SparkRDDWriteClient[HoodieRecordPayload[Nothing]]])
 
           // write to Hudi
           HoodieSparkSqlWriter.write(sqlContext, SaveMode.Append, fooTableParams, df, Option.empty,
