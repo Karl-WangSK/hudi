@@ -57,6 +57,7 @@ public class OverwriteWithLatestAvroPayload extends BaseAvroPayload
     }
   }
 
+  @Override
   public Option<IndexedRecord> combineAndGetPartialUpdateValue(IndexedRecord currentValue, Schema schema) throws IOException {
     Option<IndexedRecord> recordOption = getInsertValue(schema);
     if (recordOption.isPresent()) {

@@ -49,7 +49,7 @@ public class TestHoodiePartialUpdate extends HoodieClientTestBase {
     @Test
     public void testCopyOnWritePartialUpdate() {
         final String testPartitionPath = "2016/09/26";
-        SparkRDDWriteClient client = getHoodieWriteClient(getConfig());
+        SparkRDDWriteClient client = getHoodieWriteClient(getConfigBuilder(HoodieTestDataGenerator.TRIP_SCHEMA).build());
         dataGen = new HoodieTestDataGenerator(new String[] {testPartitionPath});
 
         String commitTime1 = "001";
@@ -61,7 +61,9 @@ public class TestHoodiePartialUpdate extends HoodieClientTestBase {
         List<HoodieKey> insertKeys = recordsToHoodieKeys(inserts1);
         upsertAndCheck(client, insertKeys, commitTime1, false);
 
-        client = getHoodieWriteClient(getConfig());
+        client = getHoodieWriteClient(getConfigBuilder(HoodieTestDataGenerator.TRIP_SCHEMA)
+                        .withPartialSchema(HoodieTestDataGenerator.PARTIAL_TRIP_SCHEMA)
+                        .withPartialUpdate(true).build());
         String commitTime2 = "002";
         client.startCommitWithTime(commitTime2);
 
@@ -79,7 +81,7 @@ public class TestHoodiePartialUpdate extends HoodieClientTestBase {
         for (GenericRecord record : records1) {
             assertEquals("rider-" + commitTime1, record.get("rider").toString());
             assertEquals("driver-" + commitTime1, record.get("driver").toString());
-            assertEquals(String.valueOf(1.0), record.get("timestamp").toString());
+            assertEquals(String.valueOf(1), record.get("timestamp").toString());
         }
     }
 
