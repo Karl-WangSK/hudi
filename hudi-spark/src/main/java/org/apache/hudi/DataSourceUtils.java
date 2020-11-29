@@ -22,6 +22,7 @@ import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hudi.avro.HoodieAvroUtils;
 import org.apache.hudi.client.HoodieReadClient;
 import org.apache.hudi.client.HoodieWriteResult;
 import org.apache.hudi.client.SparkRDDWriteClient;
@@ -172,12 +173,16 @@ public class DataSourceUtils {
     boolean combineInserts = Boolean.parseBoolean(parameters.get(DataSourceWriteOptions.INSERT_DROP_DUPS_OPT_KEY()));
     HoodieWriteConfig.Builder builder = HoodieWriteConfig.newBuilder()
         .withPath(basePath).withAutoCommit(false).combineInput(combineInserts, true);
+    String deleteFields = parameters.get(HoodieWriteConfig.DELETE_FIELD_PROP);
     if (schemaStr != null) {
         if (tableExist){
             TableSchemaResolver resolver = new TableSchemaResolver(metaClient);
             Schema lastSchema = resolver.getTableAvroSchemaWithoutMetadataFields();
+            if (deleteFields != null){
+              lastSchema = HoodieAvroUtils.removeFields(lastSchema, Arrays.asList(deleteFields.split(",")));
+            }
             Schema currentSchema = new Schema.Parser().parse(schemaStr);
-            if(lastSchema.getFields().size() >= currentSchema.getFields().size()){
+            if(lastSchema.getFields().size() > currentSchema.getFields().size()){
               builder = builder.withSchema(lastSchema.toString());
               builder = builder.withPartialSchema(schemaStr);
               builder.withPartialUpdate(true);

@@ -249,6 +249,9 @@ public class HoodieMergeHandle<T extends HoodieRecordPayload, I, K, O> extends H
       String errMsg = "Failed to merge old record into new file for key " + key + " from old file " + getOldFilePath()
           + " to new file " + newFilePath + " with writerSchema " + writerSchemaWithMetafields.toString(true);
       try {
+        if (!config.getDeleteField().equals("")){
+          oldRecord = rewriteRecord(oldRecord);
+        }
         fileWriter.writeAvro(key, oldRecord);
       } catch (ClassCastException e) {
         LOG.debug("Old record is " + oldRecord);

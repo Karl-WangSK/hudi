@@ -120,6 +120,9 @@ public class HoodieWriteConfig extends DefaultHoodieConfig {
   public static final String MAX_CONSISTENCY_CHECKS_PROP = "hoodie.consistency.check.max_checks";
   public static int DEFAULT_MAX_CONSISTENCY_CHECKS = 7;
 
+  public static final String DELETE_FIELD_PROP = "hoodie.delete.field";
+  public static String DEFAULT_DELETE_FIELD_PROP = "";
+
   /**
    * HUDI-858 : There are users who had been directly using RDD APIs and have relied on a behavior in 0.4.x to allow
    * multiple write operations (upsert/buk-insert/...) to be executed within a single commit.
@@ -787,6 +790,10 @@ public class HoodieWriteConfig extends DefaultHoodieConfig {
     return Long.valueOf(props.getProperty(HoodieMemoryConfig.MAX_MEMORY_FOR_MERGE_PROP));
   }
 
+  public String getDeleteField() {
+    return props.getProperty(DELETE_FIELD_PROP);
+  }
+
   public static class Builder {
 
     protected final Properties props = new Properties();
@@ -1012,6 +1019,11 @@ public class HoodieWriteConfig extends DefaultHoodieConfig {
       return this;
     }
 
+    public Builder withDeleteFields(String deleteFields) {
+      props.setProperty(DELETE_FIELD_PROP, deleteFields);
+      return this;
+    }
+
     public Builder withProperties(Properties properties) {
       this.props.putAll(properties);
       return this;
@@ -1060,6 +1072,7 @@ public class HoodieWriteConfig extends DefaultHoodieConfig {
           FAIL_ON_TIMELINE_ARCHIVING_ENABLED_PROP, DEFAULT_FAIL_ON_TIMELINE_ARCHIVING_ENABLED);
       setDefaultOnCondition(props, !props.containsKey(AVRO_SCHEMA_VALIDATE), AVRO_SCHEMA_VALIDATE, DEFAULT_AVRO_SCHEMA_VALIDATE);
       setDefaultOnCondition(props, !props.containsKey(PARTIAL_UPDATE), PARTIAL_UPDATE, DEFAULT_PARTIAL_UPDATE);
+      setDefaultOnCondition(props, !props.containsKey(DELETE_FIELD_PROP), DELETE_FIELD_PROP, DEFAULT_DELETE_FIELD_PROP);
       setDefaultOnCondition(props, !props.containsKey(BULKINSERT_SORT_MODE),
           BULKINSERT_SORT_MODE, DEFAULT_BULKINSERT_SORT_MODE);
 

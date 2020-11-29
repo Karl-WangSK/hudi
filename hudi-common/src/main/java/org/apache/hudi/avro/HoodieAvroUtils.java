@@ -200,6 +200,28 @@ public class HoodieAvroUtils {
     return mergedSchema;
   }
 
+  public static Schema removeField(Schema schema, String filterField) {
+    List<Schema.Field> filteredFields = schema.getFields()
+        .stream()
+        .filter(field -> !filterField.equals(field.name()))
+        .map(field -> new Schema.Field(field.name(), field.schema(), field.doc(), field.defaultVal()))
+        .collect(Collectors.toList());
+    Schema filteredSchema = Schema.createRecord(schema.getName(), schema.getDoc(), schema.getNamespace(), false);
+    filteredSchema.setFields(filteredFields);
+    return filteredSchema;
+  }
+
+  public static Schema removeFields(Schema schema, List<String> filterFields) {
+    List<Schema.Field> filteredFields = schema.getFields()
+        .stream()
+        .filter(field -> !filterFields.contains(field.name()))
+        .map(field -> new Schema.Field(field.name(), field.schema(), field.doc(), field.defaultVal()))
+        .collect(Collectors.toList());
+    Schema filteredSchema = Schema.createRecord(schema.getName(), schema.getDoc(), schema.getNamespace(), false);
+    filteredSchema.setFields(filteredFields);
+    return filteredSchema;
+  }
+
   public static Schema removeMetadataFields(Schema schema) {
     List<Schema.Field> filteredFields = schema.getFields()
                                               .stream()
